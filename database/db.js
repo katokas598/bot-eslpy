@@ -481,6 +481,64 @@ function clearOldTickets() {
     saveDB();
 }
 
+function closeTicketById(ticketId) {
+    const stmt = db.prepare('SELECT * FROM tickets WHERE id = ?');
+    stmt.bind([ticketId]);
+    let ticket = null;
+    if (stmt.step()) {
+        ticket = stmt.getAsObject();
+    }
+    stmt.free();
+    return ticket;
+}
+
+function deleteTicketById(ticketId) {
+    db.run('DELETE FROM tickets WHERE id = ?', [ticketId]);
+    saveDB();
+}
+
+function clearAllData() {
+    db.run('DELETE FROM warnings');
+    db.run('DELETE FROM bans');
+    db.run('DELETE FROM mutes');
+    db.run('DELETE FROM tickets');
+    db.run('UPDATE users SET xp = 0, level = 1, messages = 0, voice_time = 0, weekly_xp = 0, monthly_xp = 0, streak = 0');
+    saveDB();
+}
+
+function resetAllXP() {
+    db.run('UPDATE users SET xp = 0, level = 1, weekly_xp = 0, monthly_xp = 0');
+    saveDB();
+}
+
+function resetTops() {
+    db.run('UPDATE users SET weekly_xp = 0, monthly_xp = 0');
+    saveDB();
+}
+
+function resetUserXP(userId) {
+    db.run('UPDATE users SET xp = 0, level = 1 WHERE user_id = ?', [userId]);
+    saveDB();
+}
+
+function deleteUser(userId) {
+    db.run('DELETE FROM users WHERE user_id = ?', [userId]);
+    db.run('DELETE FROM warnings WHERE user_id = ?', [userId]);
+    db.run('DELETE FROM bans WHERE user_id = ?', [userId]);
+    db.run('DELETE FROM mutes WHERE user_id = ?', [userId]);
+    saveDB();
+}
+
+function unbanUser(userId) {
+    db.run('DELETE FROM bans WHERE user_id = ?', [userId]);
+    saveDB();
+}
+
+function unmuteUser(userId) {
+    db.run('DELETE FROM mutes WHERE user_id = ?', [userId]);
+    saveDB();
+}
+
 function closeTicket(channelId) {
     db.run('UPDATE tickets SET status = ? WHERE channel_id = ?', ['closed', channelId]);
     saveDB();
@@ -638,5 +696,14 @@ module.exports = {
     updateGuildSettings,
     getLeaderboard,
     getAllStats,
-    prepare
+    prepare,
+    closeTicketById,
+    deleteTicketById,
+    clearAllData,
+    resetAllXP,
+    resetTops,
+    resetUserXP,
+    deleteUser,
+    unbanUser,
+    unmuteUser
 };

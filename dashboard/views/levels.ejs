@@ -108,6 +108,15 @@
         }
         .btn:hover { transform: translateY(-3px); box-shadow: var(--glow); }
 
+        .btn-danger {
+            padding: 12px 24px; background: linear-gradient(135deg, #ef4444, #f87171);
+            border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer;
+            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+
+        .clear-actions { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; }
+
         .leaderboard-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn {
             padding: 12px 24px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
@@ -191,6 +200,19 @@
                     <h3>Бонус за серию</h3>
                     <div class="value">+<%= levelSettings?.streak_bonus || 5 %> XP/день</div>
                 </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><i class="fas fa-redo"></i> Сброс прогресса</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Осторожно! Эти действия нельзя отменить</p>
+            <div class="clear-actions">
+                <button class="btn-danger" onclick="resetAllXP()">
+                    <i class="fas fa-undo"></i> Сбросить XP всем
+                </button>
+                <button class="btn-danger" onclick="resetTops()">
+                    <i class="fas fa-trophy"></i> Сбросить топы
+                </button>
             </div>
         </div>
 
@@ -343,6 +365,42 @@
                 console.error('Error:', e);
             }
         });
+
+        async function resetAllXP() {
+            if (!confirm('Сбросить XP всем пользователям? Это действие нельзя отменить!')) return;
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сброс...';
+            
+            const response = await fetch('/api/levels/reset-all', { method: 'POST' });
+            
+            if (response.ok) {
+                alert('XP всех пользователей сброшен!');
+                location.reload();
+            } else {
+                alert('Ошибка');
+                btn.disabled = false;
+            }
+        }
+
+        async function resetTops() {
+            if (!confirm('Сбросить топы (недельный и месячный)? Это действие нельзя отменить!')) return;
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сброс...';
+            
+            const response = await fetch('/api/levels/reset-top', { method: 'POST' });
+            
+            if (response.ok) {
+                alert('Топы сброшены!');
+                location.reload();
+            } else {
+                alert('Ошибка');
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>

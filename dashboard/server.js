@@ -157,6 +157,146 @@ function init(clientInstance, dbInstance) {
         res.json(settings);
     });
 
+    app.get('/api/servers', (req, res) => {
+        const servers = client.guilds.cache.map(guild => ({
+            id: guild.id,
+            name: guild.name,
+            memberCount: guild.memberCount,
+            icon: guild.iconURL()
+        }));
+        res.json(servers);
+    });
+
+    app.post('/api/ticket/close', (req, res) => {
+        const { ticketId, channelId } = req.body;
+        try {
+            const guild = client.guilds.cache.first();
+            if (guild && channelId) {
+                const channel = guild.channels.cache.get(channelId);
+                if (channel) {
+                    channel.delete().catch(() => {});
+                }
+            }
+            db.deleteTicketById(ticketId);
+            res.json({ success: true });
+        } catch (e) {
+            res.json({ success: false, error: e.message });
+        }
+    });
+
+    app.post('/api/ticket/delete', (req, res) => {
+        const { ticketId } = req.body;
+        try {
+            db.deleteTicketById(ticketId);
+            res.json({ success: true });
+        } catch (e) {
+            res.json({ success: false, error: e.message });
+        }
+    });
+
+    app.post('/api/user/reset-xp', (req, res) => {
+        const { userId } = req.body;
+        db.resetUserXP(userId);
+        res.json({ success: true });
+    });
+
+    app.post('/api/user/delete', (req, res) => {
+        const { userId } = req.body;
+        db.deleteUser(userId);
+        res.json({ success: true });
+    });
+
+    app.post('/api/user/ban', (req, res) => {
+        const { userId, reason } = req.body;
+        const guild = client.guilds.cache.first();
+        if (guild) {
+            const member = guild.members.cache.get(userId);
+            if (member) {
+                member.ban({ reason: reason || 'Забанен через панель' }).catch(() => {});
+            }
+            db.banUser(userId, 'dashboard', reason || 'Забанен через панель', guild.id);
+        }
+        res.json({ success: true });
+    });
+
+    app.post('/api/user/mute', (req, res) => {
+        const { userId, duration, reason } = req.body;
+        const guild = client.guilds.cache.first();
+        if (guild) {
+            const member = guild.members.cache.get(userId);
+            if (member) {
+                const muteRole = guild.roles.cache.find(r => r.name === 'Muted') || 
+                    guild.roles.create({ name: 'Muted', color: '#808080', permissions: 0 }).catch(() => {});
+                if (muteRole) {
+                    member.roles.add(muteRole).catch(() => {});
+                }
+            }
+            const timeMap = { 's': 1, 'm': 60, 'h': 3600, 'd': 86400 };
+            const timeUnit = duration?.slice(-1);
+            const timeValue = parseInt(duration?.slice(0, -1));
+            const seconds = (timeValue || 60) * (timeMap[timeUnit] || 60);
+            db.muteUser(userId, 'dashboard', reason || 'Замучен через панель', guild.id, new Date(Date.now() + seconds * 1000));
+        }
+        res.json({ success: true });
+    });
+
+    app.post('/api/moderation/unban', (req, res) => {
+        const { userId } = req.body;
+        const guild = client.guilds.cache.first();
+        if (guild) {
+            guild.bans.remove(userId).catch(() => {});
+        }
+        db.unbanUser(userId);
+        res.json({ success: true });
+    });
+
+    app.post('/api/moderation/unmute', (req, res) => {
+        const { userId } = req.body;
+        const guild = client.guilds.cache.first();
+        if (guild) {
+            const member = guild.members.cache.get(userId);
+            if (member) {
+                const muteRole = guild.roles.cache.find(r => r.name === 'Muted');
+                if (muteRole) {
+                    member.roles.remove(muteRole).catch(() => {});
+                }
+            }
+        }
+        db.unmuteUser(userId);
+        res.json({ success: true });
+    });
+
+    app.post('/api/levels/reset-all', (req, res) => {
+        db.resetAllXP();
+        res.json({ success: true });
+    });
+
+    app.post('/api/levels/reset-top', (req, res) => {
+        db.resetTops();
+        res.json({ success: true });
+    });
+
+    app.post('/api/clear-memory', (req, res) => {
+        db.clearAllData();
+        res.json({ success: true });
+    });
+
+    app.post('/api/restart', (req, res) => {
+        console.log('[Dashboard] Получен запрос на перезапуск бота');
+        res.json({ success: true, message: 'Бот будет перезапущен' });
+        setTimeout(() => {
+            process.exit(1);
+        }, 1000);
+    });
+
+    app.post('/api/shutdown', (req, res) => {
+        console.log('[Dashboard] Получен запрос на выключение бота');
+        res.json({ success: true, message: 'Бот выключен' });
+        setTimeout(() => {
+            process.exit(0);
+        }, 1000);
+    });
+
     const PORT = config.dashboard.port || 3000;
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`[Dashboard] Сервер запущен на порту ${PORT}`);

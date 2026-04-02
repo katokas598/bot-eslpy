@@ -112,6 +112,16 @@
             background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px 20px;
             display: flex; align-items: center; justify-content: space-between; gap: 15px;
         }
+
+        .action-cell { display: flex; gap: 8px; }
+        .action-btn-mini {
+            padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 12px; font-weight: 600; transition: all 0.3s ease;
+        }
+        .action-btn-mini:hover { transform: translateY(-2px); }
+        .btn-unban { background: linear-gradient(135deg, #10b981, #34d399); color: #fff; }
+        .btn-unmute { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+        .action-btn-mini:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -176,6 +186,36 @@
             </div>
             <% } %>
         </div>
+
+        <div class="section">
+            <h2><i class="fas fa-gavel"></i> История банов</h2>
+            <% if (bans && bans.length > 0) { %>
+                <% bans.forEach(function(ban, index) { %>
+                <div class="ban-card" style="animation-delay: <%= index * 0.05 %>s">
+                    <div class="warning-icon">🔨</div>
+                    <div class="warning-info">
+                        <h4>ID: <%= ban.user_id %></h4>
+                        <div class="reason"><i class="fas fa-file-alt"></i> <%= ban.reason || 'Причина не указана' %></div>
+                    </div>
+                    <div class="warning-meta">
+                        <div class="mod"><i class="fas fa-user-shield"></i> <%= ban.moderator_id %></div>
+                        <div class="date"><i class="fas fa-clock"></i> <%= new Date(ban.created_at).toLocaleString() %></div>
+                    </div>
+                    <div class="action-cell">
+                        <button class="action-btn-mini btn-unban" onclick="unbanUser('<%= ban.user_id %>')">
+                            <i class="fas fa-unlock"></i> Разбанить
+                        </button>
+                    </div>
+                </div>
+                <% }); %>
+            <% } else { %>
+            <div class="empty-state">
+                <i class="fas fa-check-circle"></i>
+                <h3>Нет банов</h3>
+                <p>На сервере нет забаненных пользователей</p>
+            </div>
+            <% } %>
+        </div>
     </div>
 
     <script>
@@ -192,6 +232,46 @@
             if (data.success) {
                 alert('Логи очищены!');
                 location.reload();
+            }
+        }
+
+        async function unbanUser(userId) {
+            if (!confirm('Разбанить этого пользователя?')) return;
+            const btn = event.target.closest('button');
+            btn.disabled = true;
+            
+            const response = await fetch('/api/moderation/unban', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+            
+            if (response.ok) {
+                alert('Пользователь разбанен!');
+                location.reload();
+            } else {
+                alert('Ошибка');
+                btn.disabled = false;
+            }
+        }
+
+        async function unmuteUser(userId) {
+            if (!confirm('Снять мут с этого пользователя?')) return;
+            const btn = event.target.closest('button');
+            btn.disabled = true;
+            
+            const response = await fetch('/api/moderation/unmute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+            
+            if (response.ok) {
+                alert('Мут снят!');
+                location.reload();
+            } else {
+                alert('Ошибка');
+                btn.disabled = false;
             }
         }
     </script>

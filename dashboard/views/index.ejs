@@ -452,6 +452,53 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .system-btns {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .system-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .system-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+        }
+        .system-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-restart {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        .btn-restart:hover:not(:disabled) {
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.5);
+        }
+        .btn-shutdown {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+            color: white;
+        }
+        .btn-shutdown:hover:not(:disabled) {
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
+        }
+        .btn-clear {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: #000;
+        }
+        .btn-clear:hover:not(:disabled) {
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -539,23 +586,104 @@
 
         <div class="section">
             <h2><i class="fas fa-server"></i> Подключенные сервера</h2>
-            <div class="server-list">
-                <div class="server-item">
-                    <div class="server-icon">🎮</div>
-                    <div class="server-info">
-                        <h4>ZYC Community</h4>
-                        <p>Основной сервер</p>
-                    </div>
-                    <div class="status-indicator">
-                        <div class="status-dot"></div>
-                        <span>Онлайн</span>
-                    </div>
+            <div class="server-list" id="serverList">
+                <div class="empty-state" id="serverLoading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Загрузка серверов...</p>
                 </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><i class="fas fa-cogs"></i> Управление ботом</h2>
+            <div class="system-btns">
+                <button class="system-btn btn-clear" onclick="clearMemory()">
+                    <i class="fas fa-broom"></i> Очистить память
+                </button>
+                <button class="system-btn btn-restart" onclick="restartBot()">
+                    <i class="fas fa-redo"></i> Перезапустить бота
+                </button>
+                <button class="system-btn btn-shutdown" onclick="shutdownBot()">
+                    <i class="fas fa-power-off"></i> Выключить бота
+                </button>
             </div>
         </div>
     </div>
 
     <script>
+        // Load servers on page load
+        async function loadServers() {
+            try {
+                const response = await fetch('/api/servers');
+                const servers = await response.json();
+                const serverList = document.getElementById('serverList');
+                const loading = document.getElementById('serverLoading');
+                if (loading) loading.remove();
+                
+                if (servers.length === 0) {
+                    serverList.innerHTML = '<div class="empty-state"><i class="fas fa-server"></i><p>Нет подключённых серверов</p></div>';
+                    return;
+                }
+                
+                serverList.innerHTML = servers.map(server => `
+                    <div class="server-item">
+                        <div class="server-icon">${server.icon ? `<img src="${server.icon}" style="width:50px;height:50px;border-radius:15px;">` : '🎮'}</div>
+                        <div class="server-info">
+                            <h4>${server.name}</h4>
+                            <p>${server.memberCount} участников</p>
+                        </div>
+                        <div class="status-indicator">
+                            <div class="status-dot"></div>
+                            <span>Онлайн</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Error loading servers:', e);
+            }
+        }
+
+        async function clearMemory() {
+            if (!confirm('Очистить всю память бота? Это удалит все предупреждения, баны, мюты, тикеты и сбросит XP всех пользователей!')) return;
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Очистка...';
+            
+            const response = await fetch('/api/clear-memory', { method: 'POST' });
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Память очищена!');
+                location.reload();
+            } else {
+                alert('Ошибка: ' + data.error);
+                btn.disabled = false;
+            }
+        }
+
+        async function restartBot() {
+            if (!confirm('Перезапустить бота? Бот будет недоступен несколько секунд.')) return;
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Перезапуск...';
+            
+            await fetch('/api/restart', { method: 'POST' });
+            alert('Запрос на перезапуск отправлен! Переподключитесь через 10-15 секунд.');
+        }
+
+        async function shutdownBot() {
+            if (!confirm('ВЫКЛЮЧИТЬ БОТА? Бот не будет работать пока вы его не запустите вручную!')) return;
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Выключение...';
+            
+            await fetch('/api/shutdown', { method: 'POST' });
+            alert('Бот выключен!');
+        }
+
         // Add smooth scroll
         document.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', function(e) {
@@ -577,6 +705,9 @@
                 shape.style.transform = `translate(${x * speed}px, ${y * speed}px)`;
             });
         });
+
+        // Load servers on init
+        loadServers();
     </script>
 </body>
 </html>

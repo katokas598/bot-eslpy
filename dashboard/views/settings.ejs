@@ -143,6 +143,22 @@
         .role-badge.admin { background: linear-gradient(135deg, #ef4444, #f87171); }
         .role-badge.mod { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
         .role-badge.default { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+
+        .info-tooltip {
+            font-size: 12px; cursor: help; opacity: 0.7;
+            position: relative;
+        }
+        .info-tooltip:hover { opacity: 1; }
+
+        .settings-help {
+            display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px;
+        }
+        .help-card {
+            flex: 1; min-width: 250px;
+            background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px;
+        }
+        .help-card h4 { color: var(--primary); margin-bottom: 10px; }
+        .help-card p { font-size: 13px; color: var(--text-muted); }
     </style>
 </head>
 <body>
@@ -180,28 +196,40 @@
             <form method="POST" action="/settings">
                 <div class="settings-grid">
                     <div class="setting-card">
-                        <h3><i class="fas fa-terminal"></i> Префикс команд</h3>
+                        <h3>
+                            <i class="fas fa-terminal"></i> Префикс команд
+                            <span class="info-tooltip" title="Символ перед командой (например: ! или /)">ℹ️</span>
+                        </h3>
                         <div class="form-group">
                             <input type="text" name="prefix" value="!" placeholder="Например: !">
                         </div>
                     </div>
 
                     <div class="setting-card">
-                        <h3><i class="fas fa-door-open"></i> Канал приветствий</h3>
+                        <h3>
+                            <i class="fas fa-door-open"></i> Канал приветствий
+                            <span class="info-tooltip" title="ID канала для приветствия новых участников">ℹ️</span>
+                        </h3>
                         <div class="form-group">
                             <input type="text" name="welcome_channel" placeholder="ID канала">
                         </div>
                     </div>
 
                     <div class="setting-card">
-                        <h3><i class="fas fa-clipboard-list"></i> Канал логов</h3>
+                        <h3>
+                            <i class="fas fa-clipboard-list"></i> Канал логов
+                            <span class="info-tooltip" title="ID канала для логов (вход/выход участников)">ℹ️</span>
+                        </h3>
                         <div class="form-group">
                             <input type="text" name="log_channel" placeholder="ID канала">
                         </div>
                     </div>
 
                     <div class="setting-card">
-                        <h3><i class="fas fa-comment-dots"></i> Сообщение приветствия</h3>
+                        <h3>
+                            <i class="fas fa-comment-dots"></i> Сообщение приветствия
+                            <span class="info-tooltip" title="Используй {user} для имени пользователя и {server} для названия сервера">ℹ️</span>
+                        </h3>
                         <div class="form-group">
                             <input type="text" name="welcome_message" placeholder="Добро пожаловать, {user}!">
                         </div>

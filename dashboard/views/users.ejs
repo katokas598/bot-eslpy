@@ -110,6 +110,40 @@
 
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
         .empty-state i { font-size: 48px; margin-bottom: 20px; opacity: 0.5; }
+
+        .actions-cell { display: flex; gap: 8px; }
+        .action-btn-small {
+            padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 12px; font-weight: 600; transition: all 0.3s ease;
+        }
+        .action-btn-small:hover { transform: translateY(-2px); }
+        .btn-reset { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #000; }
+        .btn-ban { background: linear-gradient(135deg, #ef4444, #f87171); color: #fff; }
+        .btn-mute { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: #fff; }
+        .btn-delete { background: linear-gradient(135deg, #dc2626, #991b1b); color: #fff; }
+        .action-btn-small:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--dark-secondary); padding: 30px; border-radius: 20px;
+            max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .modal-content h3 { margin-bottom: 20px; }
+        .modal-content input {
+            width: 100%; padding: 12px 15px; margin-bottom: 15px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; color: var(--text);
+        }
+        .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+        .modal-btns button {
+            padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;
+        }
+        .btn-cancel { background: rgba(255,255,255,0.1); color: var(--text); }
+        .btn-confirm { background: var(--gradient); color: white; }
     </style>
 </head>
 <body>
@@ -142,6 +176,7 @@
                         <th>XP</th>
                         <th>Сообщений</th>
                         <th>Предупреждений</th>
+                        <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -160,6 +195,22 @@
                         </td>
                         <td><i class="fas fa-comment"></i> <%= user.messages %></td>
                         <td><span style="color: <%= user.warnings > 0 ? 'var(--danger)' : 'var(--success)' %>"><%= user.warnings %></span></td>
+                        <td>
+                            <div class="actions-cell">
+                                <button class="action-btn-small btn-reset" onclick="resetXP('<%= user.user_id %>')" title="Сбросить XP">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <button class="action-btn-small btn-mute" onclick="showMuteModal('<%= user.user_id %>')" title="Замутить">
+                                    <i class="fas fa-comment-slash"></i>
+                                </button>
+                                <button class="action-btn-small btn-ban" onclick="banUser('<%= user.user_id %>')" title="Забанить">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                <button class="action-btn-small btn-delete" onclick="deleteUser('<%= user.user_id %>')" title="Удалить">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                     <% }); %>
                 </tbody>
@@ -173,5 +224,108 @@
             <% } %>
         </div>
     </div>
+
+    <div class="modal" id="muteModal">
+        <div class="modal-content">
+            <h3>Замутить пользователя</h3>
+            <input type="text" id="muteReason" placeholder="Причина (необязательно)">
+            <input type="text" id="muteDuration" placeholder="Время (например: 10m, 1h, 1d)" value="10m">
+            <div class="modal-btns">
+                <button class="btn-cancel" onclick="closeModal()">Отмена</button>
+                <button class="btn-confirm" onclick="confirmMute()">Замутить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMuteUserId = null;
+
+        async function resetXP(userId) {
+            if (!confirm('Сбросить XP этому пользователю?')) return;
+            const btn = event.target.closest('button');
+            btn.disabled = true;
+            
+            const response = await fetch('/api/user/reset-xp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+            
+            if (response.ok) {
+                alert('XP сброшен!');
+                location.reload();
+            } else {
+                alert('Ошибка');
+                btn.disabled = false;
+            }
+        }
+
+        function showMuteModal(userId) {
+            currentMuteUserId = userId;
+            document.getElementById('muteModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('muteModal').classList.remove('show');
+            currentMuteUserId = null;
+        }
+
+        async function confirmMute() {
+            if (!currentMuteUserId) return;
+            const reason = document.getElementById('muteReason').value;
+            const duration = document.getElementById('muteDuration').value;
+            
+            const response = await fetch('/api/user/mute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentMuteUserId, reason, duration })
+            });
+            
+            closeModal();
+            if (response.ok) {
+                alert('Пользователь замучен!');
+                location.reload();
+            } else {
+                alert('Ошибка');
+            }
+        }
+
+        async function banUser(userId) {
+            if (!confirm('Забанить этого пользователя?')) return;
+            
+            const response = await fetch('/api/user/ban', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, reason: 'Забанен через панель' })
+            });
+            
+            if (response.ok) {
+                alert('Пользователь забанен!');
+            } else {
+                alert('Ошибка');
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('УДАЛИТЬ этого пользователя из базы данных? Это действие нельзя отменить!')) return;
+            
+            const btn = event.target.closest('button');
+            btn.disabled = true;
+            
+            const response = await fetch('/api/user/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+            
+            if (response.ok) {
+                alert('Пользователь удалён!');
+                location.reload();
+            } else {
+                alert('Ошибка');
+                btn.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
