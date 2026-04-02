@@ -16,6 +16,12 @@ if ! command -v git &> /dev/null; then
     echo "Git установлен"
 fi
 
+if ! command -v pm2 &> /dev/null; then
+    echo "PM2 не установлен. Устанавливаю..."
+    sudo npm install -g pm2 > /dev/null 2>&1
+    echo "PM2 установлен"
+fi
+
 SWAP_SIZE=$(free -m | awk '/^Swap:/ {print $2}')
 if [ "$SWAP_SIZE" -eq 0 ]; then
     echo "Создаю swap файл..."
@@ -55,11 +61,19 @@ echo "Устанавливаю зависимости..."
 npm install
 
 echo ""
-echo "=== Запуск бота ==="
-echo "Для остановки нажми Ctrl+C"
-echo ""
+echo "=== Запуск бота через PM2 ==="
 
-read -p "Запустить бота сейчас? (y/n): " start_bot
-if [ "$start_bot" = "y" ] || [ "$start_bot" = "Y" ]; then
-    node bot/index.js
-fi
+pm2 stop bot-eslpy 2>/dev/null
+pm2 delete bot-eslpy 2>/dev/null
+
+pm2 start bot/index.js --name bot-eslpy
+pm2 save
+
+echo ""
+echo "=== Бот запущен! ==="
+echo ""
+echo "Команды PM2:"
+echo "  pm2 status          - проверить статус"
+echo "  pm2 logs bot-eslpy  - посмотреть логи"
+echo "  pm2 restart bot-eslpy - перезапустить бота"
+echo "  pm2 stop bot-eslpy  - остановить бота"
