@@ -10,6 +10,14 @@ async function startBot() {
     await db.initDB();
     console.log('[Database] База данных инициализирована');
 
+    let telegramBot = null;
+    try {
+        telegramBot = require('../telegram/bot');
+        console.log('[Telegram] Бот управления запущен');
+    } catch (e) {
+        console.log('[Telegram] Бот управления НЕ запущен (возможно не настроен токен)');
+    }
+
     client = new Client({
         intents: 513
     });
