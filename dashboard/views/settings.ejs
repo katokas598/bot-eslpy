@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки - Discord Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5; --secondary: #ec4899;
+            --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+            --dark: #0f172a; --dark-secondary: #1e293b; --dark-tertiary: #334155;
+            --text: #f8fafc; --text-muted: #94a3b8;
+            --gradient: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+            --glow: 0 0 30px rgba(99, 102, 241, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; }
+        
+        .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
+        .bg-animation::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.15) 0%, transparent 50%);
+            animation: bgMove 20s ease-in-out infinite;
+        }
+        @keyframes bgMove { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-5%, -5%); } }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px;
+            padding: 25px 30px; margin-bottom: 30px; animation: slideDown 0.5s ease-out;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .logo { display: flex; align-items: center; gap: 15px; }
+        .logo-icon {
+            width: 50px; height: 50px; background: var(--gradient); border-radius: 15px;
+            display: flex; align-items: center; justify-content: center; font-size: 24px;
+            box-shadow: var(--glow); animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%, 100% { box-shadow: var(--glow); } 50% { box-shadow: 0 0 50px rgba(99, 102, 241, 0.5); } }
+        .logo h1 { font-size: 24px; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo span { font-size: 12px; color: var(--text-muted); }
+
+        nav { display: flex; gap: 10px; flex-wrap: wrap; }
+        nav a {
+            color: var(--text); text-decoration: none; padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; font-weight: 500; transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 8px;
+        }
+        nav a:hover, nav a.active { background: var(--gradient); border-color: transparent; transform: translateY(-3px); box-shadow: var(--glow); }
+
+        .section {
+            background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px;
+            padding: 30px; margin-bottom: 20px; animation: fadeInUp 0.5s ease-out;
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .section h2 { font-size: 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
+        .section h2 i { color: var(--primary); }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block; margin-bottom: 10px; font-weight: 500; color: var(--text-muted);
+        }
+        .form-group input {
+            width: 100%; padding: 15px 20px; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
+            color: var(--text); font-size: 15px; transition: all 0.3s ease;
+        }
+        .form-group input:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+        }
+        .form-group input::placeholder { color: var(--text-muted); }
+
+        .btn {
+            padding: 15px 30px; background: var(--gradient); border: none; border-radius: 12px;
+            color: white; font-size: 16px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 10px;
+        }
+        .btn:hover {
+            transform: translateY(-3px); box-shadow: var(--glow);
+        }
+        .btn:active { transform: scale(0.98); }
+
+        .settings-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;
+        }
+        .setting-card {
+            background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 25px;
+            transition: all 0.3s ease;
+        }
+        .setting-card:hover { background: rgba(255, 255, 255, 0.1); }
+        .setting-card h3 {
+            font-size: 16px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;
+        }
+        .setting-card h3 i { color: var(--primary); }
+
+        .info-box {
+            background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px; padding: 20px; margin-top: 20px;
+        }
+        .info-box h4 { color: var(--primary); margin-bottom: 10px; }
+        .info-box p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+        .bot-status {
+            display: flex; align-items: center; gap: 15px; padding: 20px;
+            background: rgba(255, 255, 255, 0.05); border-radius: 15px; margin-bottom: 20px;
+        }
+        .status-dot {
+            width: 15px; height: 15px; border-radius: 50%;
+            animation: blink 2s ease-in-out infinite;
+        }
+        .status-dot.online { background: var(--success); }
+        .status-dot.offline { background: var(--danger); }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">🤖</div>
+                    <div><h1>Discord Bot</h1><span>ZYC Management</span></div>
+                </div>
+                <nav>
+                    <a href="/"><i class="fas fa-home"></i> Главная</a>
+                    <a href="/users"><i class="fas fa-users"></i> Пользователи</a>
+                    <a href="/moderation"><i class="fas fa-shield-alt"></i> Модерация</a>
+                    <a href="/tickets"><i class="fas fa-ticket-alt"></i> Тикеты</a>
+                    <a href="/settings" class="active"><i class="fas fa-cog"></i> Настройки</a>
+                </nav>
+            </div>
+        </header>
+
+        <div class="section">
+            <h2><i class="fas fa-server"></i> Статус бота</h2>
+            <div class="bot-status">
+                <div class="status-dot online"></div>
+                <div>
+                    <strong>Discord Bot</strong>
+                    <p style="color: var(--text-muted); font-size: 13px;">Подключен и работает</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><i class="fas fa-cogs"></i> Основные настройки</h2>
+            <form method="POST" action="/settings">
+                <div class="settings-grid">
+                    <div class="setting-card">
+                        <h3><i class="fas fa-terminal"></i> Префикс команд</h3>
+                        <div class="form-group">
+                            <input type="text" name="prefix" value="!" placeholder="Например: !">
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3><i class="fas fa-door-open"></i> Канал приветствий</h3>
+                        <div class="form-group">
+                            <input type="text" name="welcome_channel" placeholder="ID канала">
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3><i class="fas fa-clipboard-list"></i> Канал логов</h3>
+                        <div class="form-group">
+                            <input type="text" name="log_channel" placeholder="ID канала">
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3><i class="fas fa-comment-dots"></i> Сообщение приветствия</h3>
+                        <div class="form-group">
+                            <input type="text" name="welcome_message" placeholder="Добро пожаловать, {user}!">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">
+                    <i class="fas fa-save"></i> Сохранить настройки
+                </button>
+            </form>
+
+            <div class="info-box">
+                <h4><i class="fas fa-info-circle"></i> Как получить ID канала?</h4>
+                <p>Включите режим разработчика в Discord (Настройки → Расширенные → Режим разработчика), затем правой кнопкой на канале выберите "Копировать ID канала".</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
