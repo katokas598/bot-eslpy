@@ -98,6 +98,13 @@ async function initDB() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS ticket_roles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id TEXT NOT NULL,
+            role_id TEXT NOT NULL,
+            UNIQUE(guild_id, role_id)
+        );
+
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
             value TEXT
@@ -416,6 +423,11 @@ function createTicket(userId, channelId, guildId) {
     return ticket;
 }
 
+function deleteTicket(channelId) {
+    db.run('DELETE FROM tickets WHERE channel_id = ?', [channelId]);
+    saveDB();
+}
+
 function getTickets(guildId) {
     const stmt = db.prepare('SELECT * FROM tickets ORDER BY created_at DESC');
     const results = [];
@@ -424,6 +436,49 @@ function getTickets(guildId) {
     }
     stmt.free();
     return results;
+}
+
+function addTicketRole(guildId, roleId) {
+    try {
+        db.run('INSERT OR IGNORE INTO ticket_roles (guild_id, role_id) VALUES (?, ?)', [guildId, roleId]);
+        saveDB();
+    } catch (e) {}
+}
+
+function removeTicketRole(guildId, roleId) {
+    db.run('DELETE FROM ticket_roles WHERE guild_id = ? AND role_id = ?', [guildId, roleId]);
+    saveDB();
+}
+
+function getTicketRoles(guildId) {
+    const stmt = db.prepare('SELECT * FROM ticket_roles WHERE guild_id = ?');
+    stmt.bind([guildId]);
+    const results = [];
+    while (stmt.step()) {
+        results.push(stmt.getAsObject().role_id);
+    }
+    stmt.free();
+    return results;
+}
+
+function clearWarnings() {
+    db.run('DELETE FROM warnings');
+    saveDB();
+}
+
+function clearBans() {
+    db.run('DELETE FROM bans');
+    saveDB();
+}
+
+function clearMutes() {
+    db.run('DELETE FROM mutes');
+    saveDB();
+}
+
+function clearOldTickets() {
+    db.run('DELETE FROM tickets WHERE status = ?', ['closed']);
+    saveDB();
 }
 
 function closeTicket(channelId) {
@@ -564,8 +619,15 @@ module.exports = {
     muteUser,
     getMutes,
     createTicket,
+    deleteTicket,
     getTickets,
-    closeTicket,
+    addTicketRole,
+    removeTicketRole,
+    getTicketRoles,
+    clearWarnings,
+    clearBans,
+    clearMutes,
+    clearOldTickets,
     getSetting,
     setSetting,
     addToQueue,

@@ -4,11 +4,13 @@ const db = require('../database/db');
 const path = require('path');
 const fs = require('fs');
 
+let client = null;
+
 async function startBot() {
     await db.initDB();
     console.log('[Database] База данных инициализирована');
 
-    const client = new Client({
+    client = new Client({
         intents: 513
     });
 
@@ -37,7 +39,7 @@ async function startBot() {
         console.log(`[Events] Загружено ${eventFiles.length} событий`);
     };
 
-    client.once('ready', () => {
+    client.once('ready', async () => {
         console.log(`[Bot] ${client.user.tag} готов к работе!`);
         console.log(`[Bot] На серверах: ${client.guilds.cache.size}`);
         
@@ -45,6 +47,9 @@ async function startBot() {
             type: 'WATCHING',
             name: `${config.discord.prefix}help | ${client.guilds.cache.size} серверов`
         });
+
+        const dashboard = require('../dashboard/server');
+        dashboard.init(client, db);
     });
 
     client.on('messageCreate', async (message) => {
@@ -142,4 +147,4 @@ async function startBot() {
 
 startBot().catch(console.error);
 
-module.exports = null;
+module.exports = { getClient: () => client };

@@ -1,27 +1,26 @@
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
-const config = require('../config.json');
-const db = require('../database/db');
 
-const app = express();
+let config, db, client;
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(session({
-    secret: config.dashboard.sessionSecret,
-    resave: false,
-    saveUninitialized: false
-}));
+function init(clientInstance, dbInstance) {
+    config = require('../config.json');
+    db = dbInstance;
+    client = clientInstance;
 
-app.use(express.static(path.join(__dirname, 'public')));
+    app.set('view engine', 'ejs');
+    app.set('views', path.join(__dirname, 'views'));
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    app.use(session({
+        secret: config.dashboard.sessionSecret,
+        resave: false,
+        saveUninitialized: false
+    }));
 
-async function startServer() {
-    await db.initDB();
-    console.log('[Database] SQLite инициализирован');
-    
+    app.use(express.static(path.join(__dirname, 'public')));
+
     app.get('/', (req, res) => {
         const stats = db.getAllStats();
         res.render('index', { stats });
@@ -45,7 +44,14 @@ async function startServer() {
         const levelSettings = db.getLevelSettings();
         const achievements = config.features.levels?.achievements || [];
         const roles = config.features.levels?.roles || [];
-        res.render('settings', { levelSettings, achievements, roles });
+        const guild = client.guilds.cache.first();
+        let serverRoles = [];
+        let ticketRoles = [];
+        if (guild) {
+            serverRoles = guild.roles.cache.filter(r => r.id !== guild.id && r.name !== '@everyone').map(r => ({ id: r.id, name: r.name }));
+            ticketRoles = db.getTicketRoles(guild.id) || [];
+        }
+        res.render('settings', { levelSettings, achievements, roles, serverRoles, ticketRoles, guild });
     });
 
     app.post('/settings', (req, res) => {
@@ -57,6 +63,20 @@ async function startServer() {
             welcome_message
         });
         res.redirect('/settings');
+    });
+
+    app.post('/api/ticket-roles', (req, res) => {
+        const { roleId, action } = req.body;
+        const guild = client.guilds.cache.first();
+        if (!guild) return res.json({ success: false, error: 'Нет сервера' });
+        
+        if (action === 'add') {
+            db.addTicketRole(guild.id, roleId);
+        } else if (action === 'remove') {
+            db.removeTicketRole(guild.id, roleId);
+        }
+        
+        res.json({ success: true });
     });
 
     app.get('/tickets', (req, res) => {
@@ -101,6 +121,22 @@ async function startServer() {
         res.json({ success: true, message: 'Настройки сохранены!' });
     });
 
+    app.post('/api/clear-logs', (req, res) => {
+        const { type } = req.body;
+        
+        if (type === 'warnings') {
+            db.clearWarnings();
+        } else if (type === 'bans') {
+            db.clearBans();
+        } else if (type === 'mutes') {
+            db.clearMutes();
+        } else if (type === 'tickets') {
+            db.clearOldTickets();
+        }
+        
+        res.json({ success: true, message: 'Логи очищены!' });
+    });
+
     app.get('/api/leaderboard/weekly', (req, res) => {
         const top = db.getWeeklyTop(10);
         res.json(top);
@@ -124,10 +160,10 @@ async function startServer() {
     const PORT = config.dashboard.port || 3000;
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`[Dashboard] Сервер запущен на порту ${PORT}`);
-        console.log(`[Dashboard] Доступ: http://zyc-discord.duckdns.org:${PORT}`);
+        console.log(`[Dashboard] Доступ: http://localhost:${PORT}`);
     });
 }
 
-startServer().catch(console.error);
+const app = express();
 
-module.exports = app;
+module.exports = { init, app };

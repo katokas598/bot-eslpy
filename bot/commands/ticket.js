@@ -7,6 +7,17 @@ module.exports = {
     async execute(message, args, client, db) {
         const reason = args.join(' ') || 'Без описания';
         
+        const ticketRoles = db.getTicketRoles(message.guild.id);
+        let roleMentions = '';
+        if (ticketRoles && ticketRoles.length > 0) {
+            const validRoles = ticketRoles
+                .map(roleId => message.guild.roles.cache.get(roleId))
+                .filter(role => role);
+            if (validRoles.length > 0) {
+                roleMentions = validRoles.map(r => r.toString()).join(' ');
+            }
+        }
+        
         const ticketChannel = await message.guild.channels.create(`ticket-${message.author.username}`, {
             permissionOverwrites: [
                 { id: message.guild.id, deny: ['VIEW_CHANNEL'] },
@@ -34,14 +45,19 @@ module.exports = {
             .setDescription(`**Причина:** ${reason}\n\nОпишите вашу проблему.`)
             .setFooter({ text: 'Нажмите 🔒 чтобы закрыть тикет' });
 
-        const msg = await ticketChannel.send({ embeds: [ticketEmbed] });
+        let content = null;
+        if (roleMentions) {
+            content = roleMentions;
+        }
+        
+        const msg = await ticketChannel.send({ content, embeds: [ticketEmbed] });
         await msg.react('🔒');
 
         const collector = msg.createReactionCollector((r, u) => r.emoji.name === '🔒' && !u.bot);
 
         collector.on('collect', async () => {
+            db.deleteTicket(ticketChannel.id);
             ticketChannel.delete();
-            db.closeTicket(ticketChannel.id);
         });
     }
 };

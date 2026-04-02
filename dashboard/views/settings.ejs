@@ -121,6 +121,28 @@
         .status-dot.online { background: var(--success); }
         .status-dot.offline { background: var(--danger); }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .role-list {
+            display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;
+        }
+        .role-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.05); border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .role-item:hover { background: rgba(255, 255, 255, 0.1); }
+        .role-item input[type="checkbox"] {
+            width: 20px; height: 20px; accent-color: var(--primary);
+        }
+        .role-item label {
+            flex: 1; cursor: pointer; margin: 0;
+        }
+        .role-badge {
+            padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+        }
+        .role-badge.admin { background: linear-gradient(135deg, #ef4444, #f87171); }
+        .role-badge.mod { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .role-badge.default { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
     </style>
 </head>
 <body>
@@ -196,6 +218,52 @@
                 <p>Включите режим разработчика в Discord (Настройки → Расширенные → Режим разработчика), затем правой кнопкой на канале выберите "Копировать ID канала".</p>
             </div>
         </div>
+
+        <div class="section">
+            <h2><i class="fas fa-user-shield"></i> Роли для тикетов</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Выберите роли, которые будут тегаться при создании нового тикета</p>
+            
+            <form id="ticketRolesForm">
+                <div class="role-list">
+                    <% if (serverRoles && serverRoles.length > 0) { %>
+                        <% serverRoles.forEach(function(role) { %>
+                        <div class="role-item">
+                            <input type="checkbox" id="role_<%= role.id %>" value="<%= role.id %>" <%= ticketRoles.includes(role.id) ? 'checked' : '' %>>
+                            <label for="role_<%= role.id %>"><%= role.name %></label>
+                        </div>
+                        <% }); %>
+                    <% } else { %>
+                        <p style="color: var(--text-muted);">Нет доступных ролей</p>
+                    <% } %>
+                </div>
+                <button type="submit" class="btn" style="margin-top: 20px;">
+                    <i class="fas fa-save"></i> Сохранить роли
+                </button>
+            </form>
+
+            <div class="info-box" style="margin-top: 20px;">
+                <h4><i class="fas fa-info-circle"></i> Как это работает?</h4>
+                <p>При создании тикета командой !ticket выбранные роли будут автоматически упомянуты в канале тикета.</p>
+            </div>
+        </div>
     </div>
+
+    <script>
+        document.getElementById('ticketRolesForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const checkboxes = document.querySelectorAll('#ticketRolesForm input[type="checkbox"]');
+            
+            for (const cb of checkboxes) {
+                const action = cb.checked ? 'add' : 'remove';
+                await fetch('/api/ticket-roles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roleId: cb.value, action })
+                });
+            }
+            
+            alert('Роли сохранены!');
+        });
+    </script>
 </body>
 </html>

@@ -97,6 +97,21 @@
             border-radius: 10px; cursor: pointer; transition: all 0.3s ease;
         }
         .tab:hover, .tab.active { background: var(--gradient); border-color: transparent; }
+
+        .btn-danger {
+            padding: 10px 20px; background: linear-gradient(135deg, #ef4444, #f87171);
+            border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer;
+            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+        
+        .clear-actions {
+            display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;
+        }
+        .stat-clear {
+            background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px 20px;
+            display: flex; align-items: center; justify-content: space-between; gap: 15px;
+        }
     </style>
 </head>
 <body>
@@ -117,6 +132,25 @@
                 </nav>
             </div>
         </header>
+
+        <div class="section">
+            <h2><i class="fas fa-broom"></i> Очистка логов</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Очистите старые записи для освобождения памяти</p>
+            <div class="clear-actions">
+                <button class="btn-danger" onclick="clearLogs('warnings')">
+                    <i class="fas fa-trash"></i> Очистить предупреждения
+                </button>
+                <button class="btn-danger" onclick="clearLogs('bans')">
+                    <i class="fas fa-ban"></i> Очистить баны
+                </button>
+                <button class="btn-danger" onclick="clearLogs('mutes')">
+                    <i class="fas fa-comment-slash"></i> Очистить мюты
+                </button>
+                <button class="btn-danger" onclick="clearLogs('tickets')">
+                    <i class="fas fa-ticket-alt"></i> Очистить закрытые тикеты
+                </button>
+            </div>
+        </div>
 
         <div class="section">
             <h2><i class="fas fa-exclamation-triangle"></i> История предупреждений</h2>
@@ -143,5 +177,23 @@
             <% } %>
         </div>
     </div>
+
+    <script>
+        async function clearLogs(type) {
+            if (!confirm('Вы уверены, что хотите очистить ' + type + '? Это действие нельзя отменить!')) return;
+            
+            const response = await fetch('/api/clear-logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                alert('Логи очищены!');
+                location.reload();
+            }
+        }
+    </script>
 </body>
 </html>
