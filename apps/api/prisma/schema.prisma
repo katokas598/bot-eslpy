@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  passwordHash String
+  role      String   @default("Viewer")
+  createdAt DateTime @default(now())
+  projects  ProjectMember[]
+}
+
+model Project {
+  id          String          @id @default(cuid())
+  name        String
+  createdAt   DateTime        @default(now())
+  members     ProjectMember[]
+  tickets     Ticket[]
+  musicTracks MusicQueueItem[]
+  rules       Rule[]
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      String   @default("Viewer")
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  projectId   String
+  title       String
+  priority    String   @default("normal")
+  status      String   @default("open")
+  assigneeTag String?
+  createdAt   DateTime @default(now())
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model MusicQueueItem {
+  id         String   @id @default(cuid())
+  projectId  String
+  title      String
+  sourceUrl  String
+  requestedBy String
+  position   Int
+  createdAt  DateTime @default(now())
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ModerationAction {
+  id        String   @id @default(cuid())
+  projectId String
+  action    String
+  targetTag String
+  reason    String
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String
+  event     String
+  payload   Json
+  createdAt DateTime @default(now())
+}
+
+model Rule {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String
+  event     String
+  action    String
+  enabled   Boolean  @default(true)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}

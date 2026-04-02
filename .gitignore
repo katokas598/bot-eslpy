@@ -1,5 +1,7 @@
-node_modules/
-config.json
+node_modules
+dist
+.next
 .env
-*.log
-.DS_Store
+.env.local
+npm-debug.log*
+coverage

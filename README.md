@@ -1,127 +1,61 @@
-# Discord Bot - Полное управление
+# Discord + Telegram + Web Platform
 
-Многофункциональный Discord бот с веб-панелью и управлением через Telegram.
+Полный monorepo для управления Discord-сервером через web и Telegram.
 
-## 📦 Установка
+## Состав
 
-```bash
-cd F:\discord-bot
-npm install
-```
+- `apps/api` — NestJS API + Prisma + BullMQ-ready модули
+- `apps/web` — Next.js web-панель
+- `apps/discord-bot` — Discord бот (discord.js)
+- `apps/telegram-bot` — Telegram бот (Telegraf)
+- `packages/shared` — общие типы и утилиты
 
-## ⚙️ Настройка
+## Запуск
 
-Отредактируйте `config.json`:
+### Быстрый вариант (почти одна команда)
 
-```json
-{
-  "discord": {
-    "token": "ВАШ_DISCORD_TOKEN"
-  },
-  "telegram": {
-    "token": "ВАШ_TELEGRAM_TOKEN",
-    "admin_id": "ВАШ_TELEGRAM_ID"
-  },
-  "dashboard": {
-    "port": 3000
-  }
-}
-```
+- `npm run quickstart`
+- Скрипт сам:
+  - поставит зависимости,
+  - запустит wizard `.env`,
+  - поднимет все контейнеры.
 
-### Как получить токены:
+### Пошаговый вариант
 
-1. **Discord Bot Token**:
-   - Перейдите на https://discord.com/developers/applications
-   - Создайте приложение → Bot → Reset Token
+1. Запусти setup wizard:
+   - `npm run setup`
+2. Запусти:
+   - `docker compose up --build -d`
+3. Открой web:
+   - [https://zyc-discord.duckdns.org](https://zyc-discord.duckdns.org)
+4. В web-панели:
+   - сначала `Register`, потом `Login` (вход по email+password)
+5. API health:
+   - [http://localhost:3001/api/health](http://localhost:3001/api/health)
 
-2. **Telegram Bot Token**:
-   - Напишите @BotFather в Telegram
-   - Создайте бота командой /newbot
-   - Скопируйте токен
+## Где брать значения для setup
 
-3. **Telegram ID**:
-   - Напишите @userinfobot в Telegram
-   - Скопируйте ваш ID
+- `DISCORD_BOT_TOKEN`: Discord Developer Portal -> Bot -> Reset/Copy Token
+- `DISCORD_CLIENT_ID`: Discord Developer Portal -> OAuth2 -> Client ID
+- `NEXT_PUBLIC_DISCORD_CLIENT_ID`: обычно тот же, что `DISCORD_CLIENT_ID` (нужен сайту для кнопки Invite)
+- `DISCORD_GUILD_ID`: ID сервера (включить Developer Mode в Discord)
+- `DISCORD_PANEL_CHANNEL_ID`: ID канала, куда отправлять панели кнопок
+- `TELEGRAM_BOT_TOKEN`: @BotFather -> `/newbot`
+- `TELEGRAM_ADMIN_CHAT_ID`: через `@userinfobot` или `getUpdates` API
 
-## 🚀 Запуск
+## Домен и HTTPS
 
-**Запуск всех компонентов (в 3 терминалах):**
+- В проект добавлен `Caddy` reverse proxy.
+- Домен `zyc-discord.duckdns.org` обслуживается по `HTTPS` автоматически.
+- В setup wizard встроена проверка `DNS -> текущий IP` с предупреждением, если запись DuckDNS неверная.
+- Маршруты:
+  - `https://zyc-discord.duckdns.org` -> `web`
+  - `https://zyc-discord.duckdns.org/api/*` -> `api`
 
-```bash
-# Терминал 1 - Discord бот
-npm run start
+## Что уже реализовано
 
-# Терминал 2 - Веб-панель
-npm run dashboard
-
-# Терминал 3 - Telegram бот
-npm run telegram
-```
-
-## 📱 Функции
-
-### Discord команды:
-| Команда | Описание |
-|---------|-----------|
-| `!play <url>` | Воспроизвести музыку |
-| `!stop` | Остановить музыку |
-| `!ban <user> [reason]` | Забанить |
-| `!kick <user> [reason]` | Кикнуть |
-| `!mute <user> <time>` | Замутить |
-| `!warn <user> [reason]` | Предупреждение |
-| `!clear <число>` | Очистить чат |
-| `!level` | Ваш уровень |
-| `!leaderboard` | Топ игроков |
-| `!ticket [причина]` | Создать тикет |
-| `!ping` | Пинг |
-| `!random <число>` | Случайное число |
-| `!calc <выражение>` | Калькулятор |
-| `!translate <язык> <текст>` | Перевод |
-| `!weather <город>` | Погода |
-| `!embed <заголовок> \| <текст>` | Создать Embed |
-| `!user [пользователь]` | Информация о юзере |
-| `!server` | Информация о сервере |
-| `!stats` | Статистика |
-| `!help` | Список команд |
-
-### Telegram управление:
-- 📊 Статус - показать статистику
-- 🛡 Модерация - история банов/варнов
-- 📢 Рассылка - отправить сообщение на все сервера
-- ⚙️ Настройки - изменить префикс, канал логов
-- 🔄 Перезагрузить - перезапустить бота
-- 📜 Логи - последние действия
-
-### Веб-панель:
-- http://localhost:3000
-- Статистика, пользователи, модерация, тикеты, настройки
-
-## 🎵 Музыка
-
-Поддерживаемые источники:
-- YouTube
-- Spotify (нужен API ключ)
-- SoundCloud (нужен API ключ)
-- VK Music (нужен токен)
-- Прямые ссылки на аудио
-
-## 📁 Структура
-
-```
-discord-bot/
-├── bot/              # Discord бот
-│   ├── commands/     # Команды
-│   └── events/       # События
-├── dashboard/        # Веб-панель
-│   ├── routes/       # Роуты
-│   └── views/        # Шаблоны
-├── telegram/         # Telegram бот
-├── database/         # База данных (SQLite)
-└── config.json       # Конфигурация
-```
-
-## ⚠️ Важно
-
-- Для работы музыки нужен ffmpeg
-- YouTube работает без ключа (ограничения)
-- Для Spotify/SoundCloud добавьте ключи в config.json
+- API: auth/login/refresh/me, RBAC check, projects, tickets lifecycle, music controls, moderation, config/modules/log/language
+- Discord: полный набор slash-команд + кнопочные панели Ticket/Music/Moderation
+- Telegram: полный набор команд управления + нижняя reply keyboard
+- Web: интерактивная панель управления (auth, tickets, music, moderation, modules)
+- База: Prisma schema (users/projects/tickets/music/moderation/audit/rules)

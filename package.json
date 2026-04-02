@@ -1,26 +1,16 @@
 {
-  "name": "discord-bot-full",
+  "name": "discord-tg-web-platform",
+  "private": true,
   "version": "1.0.0",
-  "description": "Многофункциональный Discord бот с веб-панелью и Telegram управлением",
-  "main": "bot/index.js",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "start": "node bot/index.js",
-    "dashboard": "node dashboard/server.js",
-    "telegram": "node telegram/bot.js",
-    "all": "npm run start & npm run dashboard & npm run telegram",
-    "dev": "node bot/index.js"
-  },
-  "dependencies": {
-    "discord.js": "^14.14.0",
-    "dotenv": "^16.3.1",
-    "sql.js": "^1.9.0",
-    "express": "^4.18.2",
-    "ejs": "^3.1.9",
-    "express-session": "^1.17.3",
-    "axios": "^1.6.2",
-    "node-telegram-bot-api": "^0.64.0"
-  },
-  "keywords": ["discord", "bot", "discordjs", "telegram"],
-  "author": "",
-  "license": "MIT"
+    "setup": "node scripts/setup-env.mjs",
+    "quickstart": "npm install && npm run setup && docker compose up --build -d",
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "start": "npm run start --workspaces --if-present"
+  }
 }
